@@ -5,9 +5,16 @@ import com.proto.greeting.GreetingResponse;
 import com.proto.greeting.GreetingServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class GreetingClient {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         if(args.length == 0) {
             System.out.println("Need one argument to work");
             return;
@@ -21,6 +28,7 @@ public class GreetingClient {
         switch (args[0]) {
             case "greet": doGreet(channel); break;
             case "greet_many_times": doGreetManyTimes(channel); break;
+            case "long_greet": doLongGreet(channel); break;
             default:
                 System.out.println("Keyword Invalid: " + args[0]);
         }
@@ -46,5 +54,40 @@ public class GreetingClient {
                 .forEachRemaining(greetingResponse -> {
                     System.out.println(greetingResponse.getResult());
                 });
+    }
+
+    private static void doLongGreet(final ManagedChannel channel) throws InterruptedException {
+        System.out.println("Enter doLongGreet");
+        GreetingServiceGrpc.GreetingServiceStub stub = GreetingServiceGrpc.newStub(channel);
+
+        List<String> names = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(1);
+
+        Collections.addAll(names, "Calebe", "Mary", "Test");
+
+        StreamObserver<GreetingRequest> stream = stub.longGreet(new StreamObserver<GreetingResponse>() {
+            @Override
+            public void onNext(final GreetingResponse greetingResponse) {
+                System.out.println(greetingResponse.getResult());
+            }
+
+            @Override
+            public void onError(final Throwable throwable) {
+
+            }
+
+            @Override
+            public void onCompleted() {
+                latch.countDown();
+            }
+        });
+
+        for (String name: names) {
+            stream.onNext(GreetingRequest.newBuilder().setFirstName(name).build());
+        }
+
+        stream.onCompleted();
+
+        latch.await(3, TimeUnit.SECONDS);
     }
 }
