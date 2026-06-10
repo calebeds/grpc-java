@@ -27,6 +27,7 @@ public class CalculatorClient {
             case "primes": doPrimes(channel); break;
             case "avg": doAvg(channel); break;
             case "max": doMax(channel); break;
+            case "sqrt": doSqrt(channel); break;
             default:
                 System.out.println("Keyword Invalid: " + args[0]);
         }
@@ -108,5 +109,22 @@ public class CalculatorClient {
 
         stream.onCompleted();
         latch.await(3, TimeUnit.SECONDS);
+    }
+
+    private static void doSqrt(final ManagedChannel channel) {
+        System.out.println("Enter doSqrt");
+        CalculatorServiceGrpc.CalculatorServiceBlockingStub stub = CalculatorServiceGrpc.newBlockingStub(channel);
+
+        SqrtResponse response = stub.sqrt(SqrtRequest.newBuilder().setNumber(25).build());
+
+        System.out.println("Sqrt 25 = " + response.getResult());
+
+        try {
+            response = stub.sqrt(SqrtRequest.newBuilder().setNumber(-1).build());
+            System.out.println("Sqrt -1 = " + response.getResult());
+        } catch (RuntimeException e) {
+            System.out.println("Got an Exception for sqrt");
+            System.out.println(Arrays.toString(e.getStackTrace()));
+        }
     }
 }
