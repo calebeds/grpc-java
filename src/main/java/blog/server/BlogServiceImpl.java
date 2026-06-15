@@ -11,8 +11,11 @@ import com.proto.blog.BlogServiceGrpc;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import java.util.Objects;
+
+import static com.mongodb.client.model.Filters.eq;
 
 public class BlogServiceImpl extends BlogServiceGrpc.BlogServiceImplBase {
 
@@ -51,6 +54,35 @@ public class BlogServiceImpl extends BlogServiceGrpc.BlogServiceImplBase {
         final String id = result.getInsertedId().asObjectId().getValue().toString();
 
         responseObserver.onNext(BlogId.newBuilder().setId(id).build());
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void readBlog(final BlogId request, final StreamObserver<Blog> responseObserver) {
+        if(request.getId().isEmpty()) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("The blog id cannot be empty")
+                    .asRuntimeException());
+            return;
+        }
+
+        final String id = request.getId();
+        final Document result = mongoCollection.find(eq("_id", new ObjectId(id))).first();
+
+        if(result == null) {
+            responseObserver.onError(Status.NOT_FOUND
+                    .withDescription("Blog was not found")
+                    .augmentDescription("Blog id: " + id)
+                    .asRuntimeException());
+            return;
+        }
+
+        responseObserver.onNext(Blog.newBuilder()
+                .setAuthor(result.getString("author"))
+                .setTitle(result.getString("title"))
+                .setContent(result.getString("content"))
+                .build());
+
         responseObserver.onCompleted();
     }
 }
