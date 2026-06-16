@@ -1,9 +1,11 @@
 package blog.server;
 
+import com.google.protobuf.Empty;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.InsertOneResult;
 import com.proto.blog.Blog;
 import com.proto.blog.BlogId;
@@ -16,6 +18,7 @@ import org.bson.types.ObjectId;
 import java.util.Objects;
 
 import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Updates.combine;
 
 public class BlogServiceImpl extends BlogServiceGrpc.BlogServiceImplBase {
 
@@ -83,6 +86,36 @@ public class BlogServiceImpl extends BlogServiceGrpc.BlogServiceImplBase {
                 .setContent(result.getString("content"))
                 .build());
 
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void updateBlog(final Blog request, final StreamObserver<Empty> responseObserver) {
+        if(request.getId().isEmpty()) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("The blog id cannot be empty")
+                    .asRuntimeException());
+            return;
+        }
+
+        final String id = request.getId();
+        final Document result = mongoCollection.findOneAndUpdate(eq("_id", new ObjectId(id)),
+                combine(
+                        Updates.set("author", request.getAuthor()),
+                        Updates.set("title", request.getTitle()),
+                        Updates.set("content", request.getContent())
+                ));
+
+        if(result == null) {
+            responseObserver.onError(Status.NOT_FOUND
+                            .withDescription("The blog was not found")
+                            .augmentDescription("Blog ID: " + id)
+                    .asRuntimeException());
+
+            return;
+        }
+
+        responseObserver.onNext(Empty.getDefaultInstance());
         responseObserver.onCompleted();
     }
 }

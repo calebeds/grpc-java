@@ -34,6 +34,7 @@ public class BlogClient {
         }
 
         readBlog(stub, blogId);
+        updateBlog(stub, blogId);
     }
 
     private static void readBlog(BlogServiceGrpc.BlogServiceBlockingStub stub, BlogId blogId) {
@@ -44,6 +45,22 @@ public class BlogClient {
         } catch (StatusRuntimeException ex) {
             System.out.println("Couldn't read the blog.");
             System.out.println(Arrays.asList(ex.getStackTrace()));
+        }
+    }
+
+    private static void updateBlog(BlogServiceGrpc.BlogServiceBlockingStub stub, BlogId blogId) {
+        try {
+            final Blog newBlog = Blog.newBuilder()
+                    .setId(blogId.getId())
+                    .setAuthor("Calebe Oliveira")
+                    .setTitle("New Blog (Changed)")
+                    .setContent("Hello world this is my first blog! I've added some content")
+                    .build();
+            stub.updateBlog(newBlog);
+            System.out.println("Blog updated: " + newBlog);
+        } catch (StatusRuntimeException e) {
+            System.out.println("Could't update the blog");
+            System.out.println(Arrays.asList(e.getStackTrace()));
         }
     }
 
