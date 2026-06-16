@@ -1,5 +1,6 @@
 package blog.client;
 
+import com.google.protobuf.Empty;
 import com.proto.blog.Blog;
 import com.proto.blog.BlogId;
 import com.proto.blog.BlogServiceGrpc;
@@ -35,6 +36,11 @@ public class BlogClient {
 
         readBlog(stub, blogId);
         updateBlog(stub, blogId);
+        listBlogs(stub);
+    }
+
+    private static void listBlogs(BlogServiceGrpc.BlogServiceBlockingStub stub) {
+        stub.listBlogs(Empty.getDefaultInstance()).forEachRemaining(System.out::print);
     }
 
     private static void readBlog(BlogServiceGrpc.BlogServiceBlockingStub stub, BlogId blogId) {

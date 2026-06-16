@@ -118,4 +118,18 @@ public class BlogServiceImpl extends BlogServiceGrpc.BlogServiceImplBase {
         responseObserver.onNext(Empty.getDefaultInstance());
         responseObserver.onCompleted();
     }
+
+    @Override
+    public void listBlogs(final Empty request, final StreamObserver<Blog> responseObserver) {
+        for(final Document document: mongoCollection.find()) {
+            responseObserver.onNext(Blog.newBuilder()
+                            .setId(document.getObjectId("_id").toString())
+                            .setAuthor(document.getString("author"))
+                            .setTitle(document.getString("title"))
+                            .setContent(document.getString("content"))
+                    .build());
+        }
+
+        responseObserver.onCompleted();
+    }
 }
