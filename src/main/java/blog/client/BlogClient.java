@@ -37,6 +37,7 @@ public class BlogClient {
         readBlog(stub, blogId);
         updateBlog(stub, blogId);
         listBlogs(stub);
+        deleteBlog(stub, blogId);
     }
 
     private static void listBlogs(BlogServiceGrpc.BlogServiceBlockingStub stub) {
@@ -84,6 +85,16 @@ public class BlogClient {
             System.out.println("Couldn't create the blog");
             System.out.println(Arrays.asList(ex.getStackTrace()));
             return null;
+        }
+    }
+
+    private static void deleteBlog(BlogServiceGrpc.BlogServiceBlockingStub stub, BlogId blogId) {
+        try {
+            stub.deleteBlog(blogId);
+            System.out.println("Blog deleted: " + blogId.getId());
+        } catch (StatusRuntimeException ex) {
+            System.out.println("The blog couldn't be deleted");
+            System.out.println(Arrays.asList(ex.getStackTrace()));
         }
     }
 }
